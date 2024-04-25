@@ -18,12 +18,12 @@ fi
 pushd "${toplevel}"
 
 if [[ "${1-}" == "pull" ]]; then
-    docker-compose pull --ignore-pull-failures builder
+    docker compose pull --ignore-pull-failures builder
     exit 0
 fi
 
 if [[ "${1-}" == "down" ]]; then
-    docker-compose down
+    docker compose down
     exit 0
 fi
 
@@ -37,11 +37,11 @@ mkdir -p "${DOCKER_VOLUME_DIRECTORY:-.docker}/${IMAGE_ARCH}-${OS_NAME}-vscode-ex
 mkdir -p "${DOCKER_VOLUME_DIRECTORY:-.docker}/${IMAGE_ARCH}-${OS_NAME}-conan"
 chmod -R 777 "${DOCKER_VOLUME_DIRECTORY:-.docker}"
 
-docker-compose pull --ignore-pull-failures builder
+docker compose pull --ignore-pull-failures builder
 if [[ "${CHECK_BUILDER:-}" == "1" ]]; then
-    docker-compose build builder
+    docker compose build builder
 fi
 
-docker-compose run --no-deps --rm builder "$@"
+docker compose run --no-deps --rm builder "$@"
 
 popd
