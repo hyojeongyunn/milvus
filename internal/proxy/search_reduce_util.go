@@ -382,6 +382,7 @@ func reduceSearchResultDataNoGroupBy(ctx context.Context, subSearchResultData []
 	return ret, nil
 }
 
+// FIXME:
 func rankSearchResultData(ctx context.Context,
 	nq int64,
 	params *rankParams,
@@ -451,7 +452,7 @@ func rankSearchResultData(ctx context.Context,
 		}
 	}
 
-	for i := int64(0); i < nq; i++ {
+	for i := int64(0); i < nq; i++ { // FIXME: nq is bulk로 쿼리 날릴때 bulk에 쿼리 몇개인지
 		idSet := accumulatedScores[i]
 		keys := make([]interface{}, 0)
 		for key := range idSet {

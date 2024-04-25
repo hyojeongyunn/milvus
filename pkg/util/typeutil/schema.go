@@ -1214,7 +1214,7 @@ func IsPrimaryFieldType(dataType schemapb.DataType) bool {
 	return false
 }
 
-func GetPK(data *schemapb.IDs, idx int64) interface{} {
+func GetPK(data *schemapb.IDs, idx int64) interface{} { // FIXME:
 	if int64(GetSizeOfIDs(data)) <= idx {
 		return nil
 	}

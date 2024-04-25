@@ -354,7 +354,7 @@ func (t *searchTask) initAdvancedSearchRequest(ctx context.Context) error {
 		t.SearchRequest.PartitionIDs = t.partitionIDsSet.Collect()
 	}
 	var err error
-	t.reScorers, err = NewReScorers(len(t.request.GetSubReqs()), t.request.GetSearchParams())
+	t.reScorers, err = NewReScorers(len(t.request.GetSubReqs()), t.request.GetSearchParams()) // FIXME:
 	if err != nil {
 		log.Info("generate reScorer failed", zap.Any("params", t.request.GetSearchParams()), zap.Error(err))
 		return err
@@ -597,11 +597,12 @@ func (t *searchTask) PostExecute(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			t.reScorers[index].setMetricType(metricType)
-			t.reScorers[index].reScore(result)
-			multipleMilvusResults[index] = result
+			t.reScorers[index].setMetricType(metricType) // FIXME:
+			t.reScorers[index].reScore(result) // FIXME:
+			multipleMilvusResults[index] = result // FIXME:
 		}
-		t.result, err = rankSearchResultData(ctx, t.SearchRequest.GetNq(),
+		 // FIXME:
+		t.result, err = rankSearchResultData(ctx, t.SearchRequest.GetNq(), 
 			t.rankParams,
 			primaryFieldSchema.GetDataType(),
 			multipleMilvusResults)
