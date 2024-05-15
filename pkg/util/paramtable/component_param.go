@@ -988,6 +988,7 @@ type proxyConfig struct {
 	MaxPasswordLength            ParamItem `refreshable:"true"`
 	MaxFieldNum                  ParamItem `refreshable:"true"`
 	MaxVectorFieldNum            ParamItem `refreshable:"true"`
+	BulkAggType                  ParamItem `refreshable:"true"`
 	MaxShardNum                  ParamItem `refreshable:"true"`
 	MaxDimension                 ParamItem `refreshable:"true"`
 	GinLogging                   ParamItem `refreshable:"false"`
@@ -1105,6 +1106,16 @@ So adjust at your risk!`,
 	if p.MaxVectorFieldNum.GetAsInt() > 10 || p.MaxVectorFieldNum.GetAsInt() <= 0 {
 		panic(fmt.Sprintf("Maximum number of vector fields in a collection should be in (0, 10], not %d", p.MaxVectorFieldNum.GetAsInt()))
 	}
+
+	p.BulkAggType = ParamItem{
+		Key:          "proxy.BulkAggType",
+		Version:      "2.4.0",
+		DefaultValue: "none", // invalid, none, sum, max
+		PanicIfEmpty: true,
+		Doc:          "Aggregation function type for bulk-search",
+		Export:       true,
+	}
+	p.BulkAggType.Init(base.mgr)
 
 	p.MaxShardNum = ParamItem{
 		Key:          "proxy.maxShardNum",
