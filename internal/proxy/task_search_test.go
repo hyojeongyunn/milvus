@@ -1756,6 +1756,103 @@ func TestTaskSearch_reduceGroupBySearchResultData(t *testing.T) {
 	}
 }
 
+func TestTaskSearch_AggSearchResultData(t *testing.T) {
+	var (
+		nq   int64 = 2
+		topK int64 = 5
+	)
+	ids := [][]int64{
+		{1, 3, 5, 7, 9, 1, 3, 5, 7, 9},
+		{2, 4, 6, 8, 10, 2, 4, 6, 8, 10},
+	}
+	scores := [][]float32{
+		{10, 8, 6, 4, 2, 10, 8, 6, 4, 2},
+		{9, 7, 5, 3, 1, 9, 7, 5, 3, 1},
+	}
+
+	groupByValuesArr := [][][]int64{
+		{
+			{1, 2, 3, 4, 5, 1, 2, 3, 4, 5},
+			{1, 2, 3, 4, 5, 1, 2, 3, 4, 5},
+		}, // result2 has completely same group_by values, no result from result2 can be selected
+		{
+			{1, 2, 3, 4, 5, 1, 2, 3, 4, 5},
+			{6, 8, 3, 4, 5, 6, 8, 3, 4, 5},
+		}, // result2 will contribute group_by values 6 and 8
+	}
+	expectedIDs := [][]int64{
+		{1, 3, 5, 7, 9, 1, 3, 5, 7, 9},
+		{1, 2, 3, 4, 5, 1, 2, 3, 4, 5},
+	}
+	expectedScores := [][]float32{
+		{-10, -8, -6, -4, -2, -10, -8, -6, -4, -2},
+		{-10, -9, -8, -7, -6, -10, -9, -8, -7, -6},
+	}
+	expectedGroupByValues := [][]int64{
+		{1, 2, 3, 4, 5, 1, 2, 3, 4, 5},
+		{1, 6, 2, 8, 3, 1, 6, 2, 8, 3},
+	}
+
+	expectedAggregatedIDs := [][]int64{
+		{5, 4, 3, 2, 1},
+		{3, 8, 2, 6, 1},
+	}
+	expectedAggregatedScores := [][]float32{
+		{-4, -8, -12, -16, -20},
+		{-12, -14, -16, -18, -20},
+	}
+
+	for i, groupByValues := range groupByValuesArr {
+		t.Run("Group By & Aggregation correctness", func(t *testing.T) {
+			var results []*schemapb.SearchResultData
+			for j := range ids {
+				result := getSearchResultData(nq, topK)
+				result.Ids.IdField = &schemapb.IDs_IntId{IntId: &schemapb.LongArray{Data: ids[j]}}
+				result.Scores = scores[j]
+				result.Topks = []int64{topK, topK}
+				result.GroupByFieldValue = &schemapb.FieldData{
+					Type: schemapb.DataType_Int64,
+					Field: &schemapb.FieldData_Scalars{
+						Scalars: &schemapb.ScalarField{
+							Data: &schemapb.ScalarField_LongData{
+								LongData: &schemapb.LongArray{
+									Data: groupByValues[j],
+								},
+							},
+						},
+					},
+				}
+				results = append(results, result)
+			}
+			queryInfo := &planpb.QueryInfo{
+				GroupByFieldId: 1,
+			}
+			var (
+				reduced []*milvuspb.SearchResults
+				err     error
+			)
+			reduced = make([]*milvuspb.SearchResults, 1)
+			reduced[0], err = reduceSearchResult(context.TODO(), NewReduceSearchResultInfo(results, nq, topK, metric.L2,
+				schemapb.DataType_Int64, 0, queryInfo))
+			resultIDs := reduced[0].GetResults().GetIds().GetIntId().Data
+			resultScores := reduced[0].GetResults().GetScores()
+			resultGroupByValues := reduced[0].GetResults().GetGroupByFieldValue().GetScalars().GetLongData().GetData()
+			assert.EqualValues(t, expectedIDs[i], resultIDs)
+			assert.EqualValues(t, expectedScores[i], resultScores)
+			assert.EqualValues(t, expectedGroupByValues[i], resultGroupByValues)
+			assert.NoError(t, err)
+
+			aggregatedReduced, err := AggSearchResultData(context.TODO(), nq, 5, 0, schemapb.DataType_Int64, reduced)
+			aggregatedReducedIDs := aggregatedReduced.GetResults().GetIds().GetIntId().Data
+			aggregatedReducedScores := aggregatedReduced.GetResults().GetScores()
+			// aggregatedReducedGroupByValues := aggregatedReduced.GetResults().GetGroupByFieldValue().GetScalars().GetLongData().GetData()
+			// NOTE: for aggregated computation, we replace pk with group_by_field_value
+			assert.EqualValues(t, expectedAggregatedIDs[i], aggregatedReducedIDs)
+			assert.EqualValues(t, expectedAggregatedScores[i], aggregatedReducedScores)
+		})
+	}
+}
+
 func TestTaskSearch_reduceGroupBySearchResultDataWithOffset(t *testing.T) {
 	var (
 		nq     int64 = 1
