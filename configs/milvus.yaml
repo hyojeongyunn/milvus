@@ -156,7 +156,7 @@ etcd:
     level: info
     path: stdout
   metasubpath: meta
-  rootpath: by-dev
+  rootpath: /home
   ssl:
     enabled: false
     tlscacert: /path/to/ca.pem
@@ -287,6 +287,7 @@ proxy:
   maxshardnum: 16
   maxtasknum: 1024
   maxvectorfieldnum: 4
+  bulkaggtype: none
   msgstream:
     timetick:
       bufsize: 512
